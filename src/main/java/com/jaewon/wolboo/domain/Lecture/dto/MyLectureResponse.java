@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class LectureResponse {
+public class MyLectureResponse {
 
     private Long lectureId;
     private String lectureName;
@@ -24,7 +24,7 @@ public class LectureResponse {
     private BigDecimal lecturePrice;
 
     @QueryProjection
-    public LectureResponse(Lecture lecture, UserAccount userAccount) {
+    public MyLectureResponse(Lecture lecture, UserAccount userAccount) {
         this.lectureId = lecture.getId();
         this.lectureName = lecture.getLectureName();
         this.teacherName = userAccount.getUserName();
@@ -32,5 +32,4 @@ public class LectureResponse {
         this.lectureRegisterNumber = lecture.getLectureRegistrationNumber();
         this.lecturePrice = lecture.getLecturePrice();
     }
-
 }

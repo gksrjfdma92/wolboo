@@ -45,18 +45,8 @@ public class JwtProvider {
         Claims claims = Jwts.claims();
         claims.put("email", email);
 
-        String accessToken = Jwts.builder()
-                .setClaims(claims)
-                .setIssuedAt(new Date())
-                .setExpiration(
-                        new Date(now.getTime() + Duration.ofSeconds(ACCESS_TOKEN_EXPIRE_SECOND).toMillis()))
-                .signWith(SignatureAlgorithm.HS256, secretKey)
-                .compact();
-
-        String refreshToken = Jwts.builder()
-                .setExpiration(new Date(now.getTime() + Duration.ofSeconds(REFRESH_TOKEN_EXPIRE_SECOND).toMillis()))
-                .signWith(SignatureAlgorithm.HS256, secretKey)
-                .compact();
+        String accessToken = generateAccessToken(email);
+        String refreshToken = generateRefreshToken();
 
         return TokenDto.builder()
                 .refreshToken(refreshToken)
@@ -64,13 +54,37 @@ public class JwtProvider {
                 .build();
     }
 
+    public String generateRefreshToken() {
+        Date now = new Date();
+        return Jwts.builder()
+                .setExpiration(new Date(now.getTime() + Duration.ofSeconds(REFRESH_TOKEN_EXPIRE_SECOND).toMillis()))
+                .signWith(SignatureAlgorithm.HS256, secretKey)
+                .compact();
+    }
+
+    private String generateAccessToken(String email) {
+        Date now = new Date();
+        Claims claims = Jwts.claims();
+        claims.put("email", email);
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setIssuedAt(now)
+                .setExpiration(new Date(now.getTime() + Duration.ofSeconds(ACCESS_TOKEN_EXPIRE_SECOND).toMillis()))
+                .signWith(SignatureAlgorithm.HS256, secretKey)
+                .compact();
+    }
+
     public String getEmail(String token) {
         return getClaims(token).get("email", String.class);
     }
 
     public boolean isTokenExpired(String token) {
-        return Objects.requireNonNull(getClaims(token)).getExpiration().before(new Date());
-    }
+        Claims claims = getClaims(token);
+        if (claims == null) {
+            throw new IllegalArgumentException("로그인 정보가 옳지 않습니다.");
+        }
+        return claims.getExpiration().before(new Date());    }
 
     public String extractAccessToken(HttpServletRequest request) {
 
@@ -84,6 +98,18 @@ public class JwtProvider {
 
     }
 
+    public TokenDto refreshAccessToken(String refreshToken) {
+        if (isTokenExpired(refreshToken)) {
+            throw new IllegalArgumentException("Refresh token has expired");
+        }
+        String email = getEmail(refreshToken);
+        String newAccessToken = generateAccessToken(email);
+        return TokenDto.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(refreshToken)
+                .build();
+    }
+
     public AuthUserDto validateToken(String token) {
         if(isTokenExpired(token)) {
             return null;
@@ -93,7 +119,7 @@ public class JwtProvider {
         return optionalUserAccount.map(userAccount -> AuthUserDto.builder()
                 .userName(userAccount.getUserName())
                 .email(userAccount.getEmailAddress())
-                .build()).orElse(null);
+                .build()).orElseThrow(() -> new IllegalArgumentException("Invalid token"));
     }
 
     private Claims getClaims(String token) {

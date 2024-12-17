@@ -57,4 +57,15 @@ public class LectureController {
         List<LectureRegistrationResponse> registrationResponseList = lectureService.applyToLectureList(requests, authUserDto.getEmail());
         return ResponseEntity.ok(registrationResponseList);
     }
+
+    @GetMapping("/myList/registered")
+    public ResponseEntity<Page<LectureResponse>> viewRegisteredLectures(
+            @Valid Pageable pageable,  HttpServletRequest servletRequest)
+            throws Exception
+    {
+        String accessToken = jwtProvider.extractAccessToken(servletRequest);
+        AuthUserDto authUserDto = jwtProvider.validateToken(accessToken);
+        Page<LectureResponse> lectureResponses = lectureService.viewRegisteredLectures(pageable, authUserDto.getEmail());
+        return ResponseEntity.ok(lectureResponses);
+    }
 }

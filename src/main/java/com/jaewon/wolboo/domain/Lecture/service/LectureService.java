@@ -49,18 +49,8 @@ public class LectureService {
 
     public Page<LectureResponse> searchLectures(LectureSortingMethod lectureSortingMethod, Pageable pageable, Boolean isOpenForRegistration) throws Exception
     {
-        Page<LectureResponse> lectureResponses = lectureRepository.findLectureListBySortingMethod(pageable, lectureSortingMethod, isOpenForRegistration)
-                .map(it -> LectureResponse.builder()
-                        .lectureId(it.getId())
-                        .lectureName(it.getLectureName())
-                        .lectureLimitNumber(it.getLectureLimitNumber())
-                        .lecturePrice(it.getLecturePrice())
-                        .lectureRegisterNumber(it.getLectureRegistrationNumber())
-                        .teacherName(it.getUserAccount().getUserName())
-                        .build()
-                );
+        return lectureRepository.findLectureListBySortingMethod(pageable, lectureSortingMethod, isOpenForRegistration);
 
-        return lectureResponses;
     }
 
     public List<LectureRegistrationResponse> applyToLectureList(List<Long> lectureIdList, String email) throws Exception {
@@ -85,6 +75,15 @@ public class LectureService {
             registrationResponseList.add(registerResponse);
         }
         return registrationResponseList;
+    }
+
+    public Page<LectureResponse> viewRegisteredLectures(Pageable pageable, String email) throws Exception {
+        UserAccount userAccount = userRepository.findActiveUserByEmail(email).orElseThrow(() -> new Exception("User not found"));
+        if(!userAccount.getUserRole().equals("STUDENT")) {
+            throw new Exception("User is not STUDENT");
+        }
+        return lectureRepository.findMyLectureList(pageable, userAccount);
+
     }
 
 

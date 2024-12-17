@@ -1,7 +1,10 @@
 package com.jaewon.wolboo.domain.Lecture.repository;
 
+import com.jaewon.wolboo.domain.Lecture.dto.LectureResponse;
+import com.jaewon.wolboo.domain.Lecture.dto.QLectureResponse;
 import com.jaewon.wolboo.domain.Lecture.entity.Lecture;
 import com.jaewon.wolboo.domain.Lecture.enums.LectureSortingMethod;
+import com.jaewon.wolboo.domain.User.entity.UserAccount;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -13,9 +16,12 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import static com.jaewon.wolboo.domain.Lecture.entity.QLecture.*;
+import static com.jaewon.wolboo.domain.Lecture.entity.QLectureRegistration.*;
+import static com.jaewon.wolboo.domain.User.entity.QUserAccount.*;
 
 @Repository
 @RequiredArgsConstructor
@@ -36,9 +42,11 @@ public class LectureRepositoryImpl implements LectureRepositoryCustom {
     }
 
     @Override
-    public Page<Lecture> findLectureListBySortingMethod(Pageable pageable, LectureSortingMethod sortingMethod, Boolean isOpenForRegistration) {
-        QueryResults<Lecture> results = queryFactory
-                .selectFrom(lecture)
+    public Page<LectureResponse> findLectureListBySortingMethod(Pageable pageable, LectureSortingMethod sortingMethod, Boolean isOpenForRegistration) {
+        List<LectureResponse> results = queryFactory
+                .select(new QLectureResponse(lecture, lecture.userAccount))
+                .from(lecture)
+                .join(lecture.userAccount, userAccount)
                 .where(
                         lecture.isDeleted.isFalse(),
                         isOpenForRegistration(isOpenForRegistration)
@@ -46,12 +54,49 @@ public class LectureRepositoryImpl implements LectureRepositoryCustom {
                 .orderBy(sortLectureByMethod(sortingMethod))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .fetchResults();
+                .fetch();
 
-        return new PageImpl<Lecture>(results.getResults(), pageable, results.getTotal());
+        Long total = queryFactory
+                .select(lecture.count().coalesce(0L))
+                .from(lecture)
+                .join(lecture.userAccount, userAccount)
+                .where(
+                        lecture.isDeleted.isFalse(),
+                        isOpenForRegistration(isOpenForRegistration)
+                )
+                .fetchOne();
+
+        return new PageImpl<LectureResponse>(results, pageable, total);
 
     }
 
+    @Override
+    public Page<LectureResponse> findMyLectureList(Pageable pageable, UserAccount userAccount) {
+        List<LectureResponse> results = queryFactory
+                .select(new QLectureResponse(lecture, lecture.userAccount))
+                .from(lecture)
+                .join(lectureRegistration).on(lectureRegistration.lecture.eq(lecture))
+                .where(
+                        lectureRegistration.userAccount.eq(userAccount),
+                        lecture.isDeleted.isFalse()
+                )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        long total = queryFactory
+                .select(lecture.count().coalesce(0L))
+                .from(lecture)
+                .join(lectureRegistration).on(lectureRegistration.lecture.eq(lecture))
+                .where(
+                        lectureRegistration.userAccount.eq(userAccount),
+                        lecture.isDeleted.isFalse()
+                )
+                .fetchOne();
+
+        return new PageImpl<>(results, pageable, total);
+
+    }
 
     private BooleanExpression isOpenForRegistration(Boolean isOpenForRegistration) {
         if(isOpenForRegistration) {
