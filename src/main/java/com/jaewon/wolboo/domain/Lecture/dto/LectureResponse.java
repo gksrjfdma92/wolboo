@@ -15,6 +15,7 @@ public class LectureResponse {
 
     private Long lectureId;
     private String lectureName;
+    private String teacherName;
     private Integer lectureLimitNumber;
     private Integer lectureRegisterNumber;
     private BigDecimal lecturePrice;

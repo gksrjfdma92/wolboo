@@ -55,7 +55,7 @@ public class LectureRepositoryImpl implements LectureRepositoryCustom {
 
     private BooleanExpression isOpenForRegistration(Boolean isOpenForRegistration) {
         if(isOpenForRegistration) {
-            return lecture.lectureLimitNumber.goe(lecture.lectureRegistrationNumber);
+            return lecture.lectureLimitNumber.gt(lecture.lectureRegistrationNumber);
         } else {
             return null;
         }

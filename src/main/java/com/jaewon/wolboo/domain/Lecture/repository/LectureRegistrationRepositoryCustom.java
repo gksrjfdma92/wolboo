@@ -8,5 +8,4 @@ import java.util.Optional;
 
 public interface LectureRegistrationRepositoryCustom {
 
-    Optional<LectureRegistration> findByUserAccountAndLecture(UserAccount userAccount, Lecture lecture);
 }

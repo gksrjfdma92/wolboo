@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -36,6 +37,12 @@ public class LectureRegisterService {
             // 2. 비즈니스 로직 수행
             Lecture lecture = lectureRepository.findByIdAndIsDeleted(lectureId, false)
                     .orElseThrow(() -> new Exception("Lecture not found"));
+
+            Optional<LectureRegistration> byUserAccountAndLecture = lectureRegistrationRepository.findByUserAccountAndLectureAndIsDeleted(userAccount, lecture,false);
+
+            if(byUserAccountAndLecture.isPresent()) {
+                throw new IllegalArgumentException("Lecture already registered");
+            }
 
             if (lecture.getLectureLimitNumber() <= lecture.getLectureRegistrationNumber()) {
                 return false;

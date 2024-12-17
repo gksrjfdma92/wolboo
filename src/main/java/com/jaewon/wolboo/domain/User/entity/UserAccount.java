@@ -1,10 +1,12 @@
 package com.jaewon.wolboo.domain.User.entity;
 
+import com.jaewon.wolboo.domain.Lecture.entity.Lecture;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Entity
@@ -28,6 +30,9 @@ public class UserAccount {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "userAccount")
+    private List<Lecture> lectures;
 
     private Boolean isDeleted = false;
 

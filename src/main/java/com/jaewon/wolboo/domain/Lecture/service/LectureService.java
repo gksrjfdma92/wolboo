@@ -40,7 +40,9 @@ public class LectureService {
         Lecture lecture = new Lecture(
                 registerRequest.getLectureName(),
                 registerRequest.getLectureLimitNumber(),
-                registerRequest.getLecturePrice());
+                registerRequest.getLecturePrice(),
+                userAccount
+        );
 
         lectureRepository.save(lecture);
     }
@@ -54,6 +56,7 @@ public class LectureService {
                         .lectureLimitNumber(it.getLectureLimitNumber())
                         .lecturePrice(it.getLecturePrice())
                         .lectureRegisterNumber(it.getLectureRegistrationNumber())
+                        .teacherName(it.getUserAccount().getUserName())
                         .build()
                 );
 
@@ -67,11 +70,18 @@ public class LectureService {
         }
         List<LectureRegistrationResponse> registrationResponseList = new ArrayList<>();
         for(Long lectureId : lectureIdList) {
-            Boolean registered = lectureRegisterService.registerOneLecture(lectureId, userAccount);
+            boolean registered = false;
+            try {
+                registered = lectureRegisterService.registerOneLecture(lectureId, userAccount);
+            } catch (Exception e) {
+                System.out.println("Failed to register for lecture " + lectureId + ": " + e.getMessage());
+            }
+
             LectureRegistrationResponse registerResponse = LectureRegistrationResponse.builder()
                     .registerSuccess(registered)
                     .lectureId(lectureId)
                     .build();
+
             registrationResponseList.add(registerResponse);
         }
         return registrationResponseList;
